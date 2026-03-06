@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+<script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: black;
+}
+
+a-scene {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  width: 100vw !important;
+  height: 100vh !important;
+}
+</style>
+
+</head>
+
+<body>
+
+<a-scene
+mindar-image="imageTargetSrc: targets.mind; filterMinCF: 0.0001; filterBeta: 50; warmupTolerance: 8; missTolerance: 8;"
+color-space="sRGB"
+renderer="colorManagement: true, physicallyCorrectLights"
+vr-mode-ui="enabled: false"
+device-orientation-permission-ui="enabled: false">
+
+<a-assets>
+
+<video
+id="video"
+src="portret.mp4"
+preload="auto"
+loop
+muted
+playsinline
+webkit-playsinline
+crossorigin="anonymous">
+</video>
+
+</a-assets>
+
+<a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+<a-entity id="target" mindar-image-target="targetIndex: 0">
+
+<a-video
+id="portrait-video"
+src="#video"
+position="0 0 0.01"
+width="0.84"
+height="1.14"
+material="opacity:0">
+</a-video>
+
+</a-entity>
+
+</a-scene>
+
+<script>
+
+const scene = document.querySelector("a-scene");
+const target = document.querySelector("#target");
+const video = document.querySelector("#video");
+const arVideo = document.querySelector("#portrait-video");
+
+scene.addEventListener("renderstart", () => {
+  video.play().catch(()=>{});
+});
+
+target.addEventListener("targetFound", () => {
+
+  video.currentTime = 0;
+  video.play().catch(()=>{});
+
+  arVideo.setAttribute("animation",
+  "property: material.opacity; from: 0; to: 1; dur: 600; easing: easeOutQuad");
+
+});
+
+target.addEventListener("targetLost", () => {
+
+  video.pause();
+  arVideo.setAttribute("material","opacity:0");
+
+});
+
+</script>
+
+</body>
+</html>
