@@ -44,7 +44,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 10;
+      z-index: 9998;
     }
 
     #scan-frame {
@@ -84,13 +84,14 @@
       bottom: 9vh;
       transform: translateX(-50%);
       color: white;
-      background: rgba(0,0,0,0.32);
-      padding: 10px 14px;
+      background: rgba(0,0,0,0.55);
+      padding: 12px 16px;
       border-radius: 999px;
-      font-size: 14px;
+      font-size: 15px;
+      font-weight: 500;
       line-height: 1;
       letter-spacing: 0.2px;
-      z-index: 11;
+      z-index: 9999;
       pointer-events: none;
       white-space: nowrap;
     }
@@ -143,6 +144,7 @@
         position="0 0 0.01"
         width="1.03"
         height="1.396"
+        visible="true"
         material="opacity: 0; transparent: true">
       </a-video>
     </a-entity>
@@ -157,13 +159,29 @@
     const scanUI = document.querySelector("#scan-ui");
     const scanText = document.querySelector("#scan-text");
 
+    scanUI.classList.remove("hidden");
+    scanText.classList.remove("hidden");
+
     let hasPlayedForCurrentDetection = false;
+
+    function hideARVideo() {
+      arVideo.removeAttribute("animation");
+      arVideo.setAttribute("material", "opacity: 0; transparent: true");
+    }
+
+    function showARVideo() {
+      arVideo.removeAttribute("animation");
+      arVideo.setAttribute(
+        "animation",
+        "property: material.opacity; from: 0; to: 1; dur: 400; easing: easeOutQuad"
+      );
+    }
 
     scene.addEventListener("renderstart", () => {
       video.pause();
       video.currentTime = 0;
-      arVideo.removeAttribute("animation");
-      arVideo.setAttribute("material", "opacity: 0; transparent: true");
+      video.load();
+      hideARVideo();
       scanUI.classList.remove("hidden");
       scanText.classList.remove("hidden");
     });
@@ -176,30 +194,24 @@
       scanUI.classList.add("hidden");
       scanText.classList.add("hidden");
 
-      arVideo.removeAttribute("animation");
-      arVideo.setAttribute("material", "opacity: 0; transparent: true");
-
-      video.pause();
-      video.currentTime = 0;
+      hideARVideo();
 
       try {
+        video.pause();
+        video.currentTime = 0;
+        video.load();
         await video.play();
+        showARVideo();
       } catch (e) {
         console.log("Play failed:", e);
       }
-
-      arVideo.setAttribute(
-        "animation",
-        "property: material.opacity; from: 0; to: 1; dur: 400; easing: easeOutQuad"
-      );
     });
 
     target.addEventListener("targetLost", () => {
       hasPlayedForCurrentDetection = false;
       video.pause();
       video.currentTime = 0;
-      arVideo.removeAttribute("animation");
-      arVideo.setAttribute("material", "opacity: 0; transparent: true");
+      hideARVideo();
       scanUI.classList.remove("hidden");
       scanText.classList.remove("hidden");
     });
@@ -207,6 +219,14 @@
     video.addEventListener("ended", () => {
       video.pause();
       video.currentTime = 0;
+    });
+
+    video.addEventListener("error", (e) => {
+      console.log("Video error:", e);
+    });
+
+    video.addEventListener("canplay", () => {
+      console.log("Video can play");
     });
   </script>
 
