@@ -1,102 +1,214 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
-<script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: transparent;
+      font-family: Arial, sans-serif;
+    }
 
-<style>
-html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: black;
-}
+    body {
+      position: fixed;
+      inset: 0;
+    }
 
-a-scene {
-  position: fixed !important;
-  top: 0;
-  left: 0;
-  width: 100vw !important;
-  height: 100vh !important;
-}
-</style>
+    a-scene {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      background: transparent !important;
+    }
 
+    video, canvas {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      object-fit: cover !important;
+    }
+
+    #scan-ui {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    #scan-frame {
+      width: 62vw;
+      max-width: 320px;
+      aspect-ratio: 3485 / 4724;
+      border: 1.5px solid rgba(255,255,255,0.75);
+      border-radius: 14px;
+      box-shadow: 0 0 0 9999px rgba(0,0,0,0.12);
+      position: relative;
+    }
+
+    #scan-frame::before,
+    #scan-frame::after {
+      content: "";
+      position: absolute;
+      left: 8%;
+      right: 8%;
+      height: 2px;
+      background: rgba(255,255,255,0.85);
+      animation: scanline 2.2s linear infinite;
+    }
+
+    #scan-frame::before {
+      top: 18%;
+    }
+
+    #scan-frame::after {
+      top: 68%;
+      opacity: 0.35;
+      animation-delay: 1.1s;
+    }
+
+    #scan-text {
+      position: fixed;
+      left: 50%;
+      bottom: 9vh;
+      transform: translateX(-50%);
+      color: white;
+      background: rgba(0,0,0,0.32);
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 14px;
+      line-height: 1;
+      letter-spacing: 0.2px;
+      z-index: 11;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    @keyframes scanline {
+      0%   { transform: translateY(0); opacity: 0.12; }
+      50%  { opacity: 0.9; }
+      100% { transform: translateY(220px); opacity: 0.12; }
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
 </head>
-
 <body>
 
-<a-scene
-mindar-image="imageTargetSrc: targets.mind; filterMinCF: 0.0001; filterBeta: 50; warmupTolerance: 8; missTolerance: 8;"
-color-space="sRGB"
-renderer="colorManagement: true, physicallyCorrectLights"
-vr-mode-ui="enabled: false"
-device-orientation-permission-ui="enabled: false">
+  <div id="scan-ui">
+    <div id="scan-frame"></div>
+  </div>
 
-<a-assets>
+  <div id="scan-text">Usmjerite kameru prema slici</div>
 
-<video
-id="video"
-src="portret.mp4"
-preload="auto"
-loop
-muted
-playsinline
-webkit-playsinline
-crossorigin="anonymous">
-</video>
+  <a-scene
+    mindar-image="imageTargetSrc: targets.mind; filterMinCF: 0.0001; filterBeta: 50; warmupTolerance: 8; missTolerance: 8; uiScanning: no; uiLoading: no; uiError: no;"
+    color-space="sRGB"
+    renderer="colorManagement: true, physicallyCorrectLights; alpha: true"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false"
+    loading-screen="enabled: false">
 
-</a-assets>
+    <a-assets>
+      <video
+        id="video"
+        src="portret-web.mp4"
+        preload="auto"
+        muted
+        playsinline
+        webkit-playsinline
+        crossorigin="anonymous">
+      </video>
+    </a-assets>
 
-<a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-<a-entity id="target" mindar-image-target="targetIndex: 0">
+    <a-entity id="target" mindar-image-target="targetIndex: 0">
+      <a-video
+        id="portrait-video"
+        src="#video"
+        position="0 0 0.01"
+        width="1.03"
+        height="1.396"
+        material="opacity: 0; transparent: true">
+      </a-video>
+    </a-entity>
 
-<a-video
-id="portrait-video"
-src="#video"
-position="0 0 0.01"
-width="0.84"
-height="1.14"
-material="opacity:0">
-</a-video>
+  </a-scene>
 
-</a-entity>
+  <script>
+    const scene = document.querySelector("a-scene");
+    const target = document.querySelector("#target");
+    const video = document.querySelector("#video");
+    const arVideo = document.querySelector("#portrait-video");
+    const scanUI = document.querySelector("#scan-ui");
+    const scanText = document.querySelector("#scan-text");
 
-</a-scene>
+    let hasPlayedForCurrentDetection = false;
 
-<script>
+    scene.addEventListener("renderstart", () => {
+      video.pause();
+      video.currentTime = 0;
+      arVideo.removeAttribute("animation");
+      arVideo.setAttribute("material", "opacity: 0; transparent: true");
+      scanUI.classList.remove("hidden");
+      scanText.classList.remove("hidden");
+    });
 
-const scene = document.querySelector("a-scene");
-const target = document.querySelector("#target");
-const video = document.querySelector("#video");
-const arVideo = document.querySelector("#portrait-video");
+    target.addEventListener("targetFound", async () => {
+      if (hasPlayedForCurrentDetection) return;
 
-scene.addEventListener("renderstart", () => {
-  video.play().catch(()=>{});
-});
+      hasPlayedForCurrentDetection = true;
 
-target.addEventListener("targetFound", () => {
+      scanUI.classList.add("hidden");
+      scanText.classList.add("hidden");
 
-  video.currentTime = 0;
-  video.play().catch(()=>{});
+      arVideo.removeAttribute("animation");
+      arVideo.setAttribute("material", "opacity: 0; transparent: true");
 
-  arVideo.setAttribute("animation",
-  "property: material.opacity; from: 0; to: 1; dur: 600; easing: easeOutQuad");
+      video.pause();
+      video.currentTime = 0;
 
-});
+      try {
+        await video.play();
+      } catch (e) {
+        console.log("Play failed:", e);
+      }
 
-target.addEventListener("targetLost", () => {
+      arVideo.setAttribute(
+        "animation",
+        "property: material.opacity; from: 0; to: 1; dur: 400; easing: easeOutQuad"
+      );
+    });
 
-  video.pause();
-  arVideo.setAttribute("material","opacity:0");
+    target.addEventListener("targetLost", () => {
+      hasPlayedForCurrentDetection = false;
+      video.pause();
+      video.currentTime = 0;
+      arVideo.removeAttribute("animation");
+      arVideo.setAttribute("material", "opacity: 0; transparent: true");
+      scanUI.classList.remove("hidden");
+      scanText.classList.remove("hidden");
+    });
 
-});
-
-</script>
+    video.addEventListener("ended", () => {
+      video.pause();
+      video.currentTime = 0;
+    });
+  </script>
 
 </body>
 </html>
